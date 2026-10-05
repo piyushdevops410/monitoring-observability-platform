@@ -1,0 +1,13 @@
+groups:
+  - name: application-alerts
+    rules:
+
+      - alert: DevOpsApplicationDown
+        expr: up{job="devops-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: devops-production-app
+        annotations:
+          summary: "DevOps Production Application is down"
+          description: "Prometheus cannot scrape the Node.js application on port 3001."
