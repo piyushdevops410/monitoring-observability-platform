@@ -1,0 +1,69 @@
+groups:
+  - name: kubernetes-cicd-alerts
+    rules:
+
+      - alert: KubernetesDeploymentReplicasMismatch
+        expr: |
+          kube_deployment_spec_replicas{
+            namespace="kubernetes-cicd",
+            deployment="kubernetes-cicd-app"
+          }
+          !=
+          kube_deployment_status_replicas_available{
+            namespace="kubernetes-cicd",
+            deployment="kubernetes-cicd-app"
+          }
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kubernetes deployment replicas mismatch"
+          description: "The kubernetes-cicd-app deployment does not have the expected number of available replicas."
+
+      - alert: KubernetesPodRestarting
+        expr: |
+          increase(
+            kube_pod_container_status_restarts_total{
+              namespace="kubernetes-cicd",
+              pod=~"kubernetes-cicd-app-.*"
+            }[10m]
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kubernetes pod restarted"
+          description: "A kubernetes-cicd-app pod has restarted within the last 10 minutes."
+
+      - alert: KubernetesPodNotRunning
+        expr: |
+          kube_pod_status_phase{
+            namespace="kubernetes-cicd",
+            pod=~"kubernetes-cicd-app-.*",
+            phase!="Running"
+          } == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kubernetes pod is not running"
+          description: "A kubernetes-cicd-app pod has been in a non-running state for more than 2 minutes."
+
+      - alert: NodeExporterDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Prometheus cannot scrape the Linux host metrics."
+
+      - alert: KubeStateMetricsDown
+        expr: up{job="kube-state-metrics"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kube State Metrics is down"
+          description: "Prometheus cannot scrape Kubernetes object metrics."
+
